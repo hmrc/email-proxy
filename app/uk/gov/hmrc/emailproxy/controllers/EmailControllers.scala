@@ -16,19 +16,20 @@
 
 package uk.gov.hmrc.emailproxy.controllers
 
-import javax.inject.Singleton
-
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import play.api.mvc._
-
-import scala.concurrent.Future
+import javax.inject.{Inject, Named, Singleton}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 @Singleton()
-class MicroserviceHelloWorld extends BaseController {
+class EmailControllers @Inject()(http:HttpClient)extends BaseController {
 
-	def hello() = Action.async { implicit request =>
-		Future.successful(Ok("Hello world"))
-	}
+  def send(domain: String) = Action.async(parse.text) { implicit request =>
+//    Future.successful(Ok("Matt's Amazing"))
+
+  def result = http.POSTString(s"localhost:8300/$domain/email", request.body, Seq.empty[(String,String)])
+    result.map{ x => Status(x.status)}
+  }
 
 }

@@ -1,3 +1,5 @@
 # microservice specific routes
 
 GET        /hello-world             uk.gov.hmrc.emailproxy.controllers.MicroserviceHelloWorld.hello
+
+POST       /:domain/email           uk.gov.hmrc.emailproxy.controllers.EmailControllers.send(domain: String)
