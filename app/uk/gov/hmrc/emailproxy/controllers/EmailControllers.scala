@@ -16,20 +16,33 @@
 
 package uk.gov.hmrc.emailproxy.controllers
 
+import akka.util.ByteString
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import play.api.mvc._
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{Inject, Singleton}
+import play.api.{Configuration, Environment}
+import play.api.Mode.Mode
+import play.api.http.HttpEntity
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
+
 @Singleton()
-class EmailControllers @Inject()(http:HttpClient)extends BaseController {
+class EmailControllers @Inject()(
+                                  http:HttpClient,
+                                  val runModeConfiguration: Configuration,
+                                  envi: Environment
+                                )extends BaseController with ServicesConfig {
 
-  def send(domain: String) = Action.async(parse.text) { implicit request =>
-//    Future.successful(Ok("Matt's Amazing"))
+  protected def mode: Mode = envi.mode
 
-  def result = http.POSTString(s"localhost:8300/$domain/email", request.body, Seq.empty[(String,String)])
-    result.map{ x => Status(x.status)}
+  private lazy val rendererBaseUrl = baseUrl(s"$services.email")
+
+  def send(domain: String): Action[String] = Action.async(parse.text) { implicit request =>
+    http.POSTString(s"$rendererBaseUrl/$domain/email", request.body,  Seq.empty[(String,String)])
+        .map{ r => Result( ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")) ) }
+
   }
 
 }

@@ -17,23 +17,26 @@
 package uk.gov.hmrc.emailproxy.controllers
 
 import play.api.http.Status
-import play.api.test.FakeRequest
-import play.api.http.Status
-import play.api.test.FakeRequest
-import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.play.test.WithFakeApplication
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
+import akka.util.ByteString
+import play.api.libs.streams.Accumulator
+import play.api.mvc.Result
+import play.api.test.FakeRequest
+import uk.gov.hmrc.play.test.{UnitSpec}
+import play.api.inject.guice.GuiceApplicationBuilder
 
-class MicroserviceHelloWorldControllerSpec extends UnitSpec with WithFakeApplication{
+class EmailControllerSpec extends UnitSpec {
 
   val fakeRequest = FakeRequest("GET", "/")
 
+  val injector = new GuiceApplicationBuilder().build().injector
+
   "GET /" should {
     "return 200" in {
-      val controller = new MicroserviceHelloWorld()
-      val result = controller.hello()(fakeRequest)
-      status(result) shouldBe Status.OK
+      val controller = injector.instanceOf[EmailControllers]
+      val result: Accumulator[ByteString, Result] = controller.send("")(fakeRequest)
+
+      result shouldBe (Status.OK)
     }
   }
 
