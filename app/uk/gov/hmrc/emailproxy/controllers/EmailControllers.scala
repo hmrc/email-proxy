@@ -45,7 +45,7 @@ class EmailControllers @Inject()(
 
   def send(domain: String) = Action.async(parse.text) { implicit request =>
 
-    http.POSTString(s"$rendererBaseUrl/$domain/email", request.body,  Seq.empty[(String,String)])
+    http.POSTString(s"$rendererBaseUrl/$domain/email", request.body,  request.headers.headers)
         .map{ r =>
           Result( ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")) )
         }
