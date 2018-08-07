@@ -16,28 +16,115 @@
 
 package uk.gov.hmrc.emailproxy.controllers
 
-import play.api.http.Status
+import java.util.concurrent.TimeoutException
 
-import akka.util.ByteString
-import play.api.libs.streams.Accumulator
-import play.api.mvc.Result
+import akka.stream.Materializer
+import com.typesafe.config.Config
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.test.{UnitSpec}
-import play.api.inject.guice.GuiceApplicationBuilder
+import org.scalatestplus.play._
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.{Configuration, Environment}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import play.api.libs.json.{Json, Writes}
+import play.api.mvc.Headers
+import uk.gov.hmrc.http.hooks.HttpHook
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
-class EmailControllerSpec extends UnitSpec {
+import scala.concurrent.Future
 
-  val fakeRequest = FakeRequest("GET", "/")
+class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite  {
+  import play.api.test.Helpers._
 
-  val injector = new GuiceApplicationBuilder().build().injector
+  val fakeRequest = FakeRequest("POST", "/hmrc/email", Headers(), "")
 
-  "GET /" should {
-    "return 200" in {
-      val controller = injector.instanceOf[EmailControllers]
-      val result: Accumulator[ByteString, Result] = controller.send("")(fakeRequest)
+  "Send email" should {
+    "should be valid" in {
+      val validEmailSent = new DummyHttpClient {
+        override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] =
+          Future.successful( HttpResponse(202, Some(Json.parse("""{"result": "Hello"}"""))))
+      }
+      val conf = Configuration( "Test.microservice.services.email.host"  -> "localhost", "Test.microservice.services.email.port"  -> "80")
 
-      result shouldBe (Status.OK)
+      val env = Environment.simple()
+
+      val controller =  new EmailControllers(validEmailSent, conf, env)
+
+      implicit lazy val materializer: Materializer = app.materializer
+
+      val result = call( controller.send("hmrc"), fakeRequest )
+
+      status(result) mustEqual ACCEPTED
     }
   }
 
+  "should be invalid" in {
+    val validEmailSent = new DummyHttpClient {
+      override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] =
+        Future.successful( HttpResponse(400, Some(Json.parse("""{"statusCode":  400, "message": "Something"}"""))))
+    }
+    val conf = Configuration( "Test.microservice.services.email.host"  -> "localhost", "Test.microservice.services.email.port"  -> "80")
+
+    val env = Environment.simple()
+
+    val controller =  new EmailControllers(validEmailSent, conf, env)
+
+    implicit lazy val materializer: Materializer = app.materializer
+
+    val result = call( controller.send("hmrc"), fakeRequest )
+
+    status(result) mustEqual BAD_REQUEST
+  }
+
+  "email server no running" in {
+    val validEmailSent = new DummyHttpClient {
+      override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] =
+         throw new TimeoutException("Ahhhh")
+    }
+    val conf = Configuration( "Test.microservice.services.email.host"  -> "localhost", "Test.microservice.services.email.port"  -> "80")
+
+    val env = Environment.simple()
+
+    val controller =  new EmailControllers(validEmailSent, conf, env)
+
+    implicit lazy val materializer: Materializer = app.materializer
+
+
+    assertThrows[TimeoutException]  {
+
+      val result = call(controller.send("hmrc"), fakeRequest)
+
+      status(result) mustEqual BAD_REQUEST
+    }
+  }
+
+
 }
+
+
+
+//     BadRequest(Json.obj("statusCode" -> 400, "message" -> message))
+
+trait DummyHttpClient extends HttpClient {
+  override def doGet(url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+  override def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit wts: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = ???
+
+  override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+  override def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+  override def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+  override def doDelete(url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+  override def configuration: Option[Config] = ???
+
+  override def doPut[A](url: String, body: A)(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = ???
+
+  override val hooks: Seq[HttpHook] = Seq.empty[HttpHook]
+
+  override def doPatch[A](url: String, body: A)(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = ???
+
+}
+
+
