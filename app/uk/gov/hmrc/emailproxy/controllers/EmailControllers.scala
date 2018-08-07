@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.emailproxy.controllers
 
+import java.net.ConnectException
+import java.util.concurrent.TimeoutException
+
 import akka.util.ByteString
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import play.api.mvc._
@@ -23,6 +26,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.{Configuration, Environment}
 import play.api.Mode.Mode
 import play.api.http.HttpEntity
+import uk.gov.hmrc.http.{BadGatewayException, BadRequestException, GatewayTimeoutException}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
@@ -37,11 +41,23 @@ class EmailControllers @Inject()(
 
   protected def mode: Mode = envi.mode
 
-  private lazy val rendererBaseUrl = baseUrl(s"$services.email")
+  private lazy val rendererBaseUrl = baseUrl("email")
 
-  def send(domain: String): Action[String] = Action.async(parse.text) { implicit request =>
+  def send(domain: String) = Action.async(parse.text) { implicit request =>
+
     http.POSTString(s"$rendererBaseUrl/$domain/email", request.body,  Seq.empty[(String,String)])
-        .map{ r => Result( ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")) ) }
+        .map{ r =>
+          Result( ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")) )
+        }
+      .recover{
+        case e: TimeoutException   => Status(500 )
+        case e: GatewayTimeoutException   => Status(500 )
+        case e: ConnectException => Status(500 )
+        case e: BadGatewayException => Status(500 )
+
+        case e =>
+          Result( ResponseHeader(400), HttpEntity.Strict(ByteString(e.getMessage), None) )
+      }
 
   }
 
