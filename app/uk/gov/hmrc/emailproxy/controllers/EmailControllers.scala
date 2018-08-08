@@ -43,9 +43,9 @@ class EmailControllers @Inject()(
 
   private lazy val rendererBaseUrl = baseUrl("email")
 
-  def send(domain: String) = Action.async(parse.text) { implicit request =>
+  def send(domain: String) = Action.async(parse.json) { implicit request =>
 
-    http.POSTString(s"$rendererBaseUrl/$domain/email", request.body,  request.headers.headers)
+    http.POST(s"$rendererBaseUrl/$domain/email", request.body,  request.headers.headers)
         .map{ r =>
           Result( ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")) )
         }

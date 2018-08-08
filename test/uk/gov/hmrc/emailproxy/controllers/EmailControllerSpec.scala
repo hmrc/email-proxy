@@ -35,12 +35,15 @@ import scala.concurrent.Future
 class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite  {
   import play.api.test.Helpers._
 
-  val fakeRequest = FakeRequest("POST", "/hmrc/email", Headers(), "")
+  val validBody = """{ "to": ["andy.hicks@digital.hmrc.gov.uk"], "templateId": "dc-1462-test-message", "parameters": { "recipientName_line1": "Mr Andy Smith", "recipientName_line2": "in the capacity of", "recipientName_line3": "A. N. Other" } }"""
+
+  val fakeRequest = FakeRequest("POST", "/hmrc/email", Headers("Content-type" -> "application/json"), validBody)
+
 
   "Send email" should {
     "should be valid" in {
       val validEmailSent = new DummyHttpClient {
-        override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] =
+        override def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit wts: Writes[A], hc: HeaderCarrier): Future[HttpResponse] =
           Future.successful( HttpResponse(202, Some(Json.parse("""{"result": "Hello"}"""))))
       }
       val conf = Configuration( "Test.microservice.services.email.host"  -> "localhost", "Test.microservice.services.email.port"  -> "80")
@@ -59,7 +62,7 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite  {
 
   "should be invalid" in {
     val validEmailSent = new DummyHttpClient {
-      override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] =
+      override def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit wts: Writes[A], hc: HeaderCarrier): Future[HttpResponse] =
         Future.successful( HttpResponse(400, Some(Json.parse("""{"statusCode":  400, "message": "Something"}"""))))
     }
     val conf = Configuration( "Test.microservice.services.email.host"  -> "localhost", "Test.microservice.services.email.port"  -> "80")
@@ -77,8 +80,8 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite  {
 
   "email server no running" in {
     val validEmailSent = new DummyHttpClient {
-      override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] =
-         throw new TimeoutException("Ahhhh")
+      override def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit wts: Writes[A], hc: HeaderCarrier): Future[HttpResponse] =
+        throw new TimeoutException("Ahhhh")
     }
     val conf = Configuration( "Test.microservice.services.email.host"  -> "localhost", "Test.microservice.services.email.port"  -> "80")
 
