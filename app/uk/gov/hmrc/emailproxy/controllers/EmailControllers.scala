@@ -26,7 +26,8 @@ import javax.inject.{Inject, Singleton}
 import play.api.{Configuration, Environment}
 import play.api.Mode.Mode
 import play.api.http.HttpEntity
-import uk.gov.hmrc.http.{BadGatewayException, BadRequestException, GatewayTimeoutException}
+import play.api.libs.json.JsValue
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
@@ -43,20 +44,26 @@ class EmailControllers @Inject()(
 
   private lazy val rendererBaseUrl = baseUrl("email")
 
-  def send(domain: String) = Action.async(parse.json) { implicit request =>
+
+  def gatewayTimeoutResult( e:Exception):Result = {
+    val msg = s"""{ "statusCode": $BAD_GATEWAY, "message": "${e.getMessage}" } """
+    Result(ResponseHeader(BAD_GATEWAY), HttpEntity.Strict(ByteString(msg), None))
+      .withHeaders("Content-Type" -> "application/json")
+  }
+
+  def send(domain: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
 
     http.POST(s"$rendererBaseUrl/$domain/email", request.body)
         .map{ r =>
-          Result( ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")) )
+          Result( ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")) ).withHeaders("Content-Type" -> "application/json")
         }
       .recover{
-        case e: TimeoutException   => Status(500 )
-        case e: GatewayTimeoutException   => Status(500 )
-        case e: ConnectException => Status(500 )
-        case e: BadGatewayException => Status(500 )
+        case e: TimeoutException   => gatewayTimeoutResult(e)
+        case e: ConnectException => gatewayTimeoutResult(e)
+        case e: BadGatewayException =>  gatewayTimeoutResult(e)
 
         case e =>
-          Result( ResponseHeader(400), HttpEntity.Strict(ByteString(e.getMessage), None) )
+          Result( ResponseHeader(400), HttpEntity.Strict(ByteString(e.getMessage), None) ).withHeaders("Content-Type" -> "application/json")
       }
 
   }
