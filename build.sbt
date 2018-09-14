@@ -5,7 +5,7 @@ import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 val appName = "email-proxy"
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
+  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
   .settings(
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test(),
     evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false)
@@ -25,3 +25,4 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     resolvers += Resolver.jcenterRepo
   )
+  .settings( majorVersion := 1 )
