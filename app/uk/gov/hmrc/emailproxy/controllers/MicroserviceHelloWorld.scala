@@ -16,18 +16,16 @@
 
 package uk.gov.hmrc.emailproxy.controllers
 
-import javax.inject.Singleton
-
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import javax.inject.{Inject, Singleton}
 import play.api.mvc._
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.Future
 
 @Singleton()
-class MicroserviceHelloWorld extends BaseController {
+class MicroserviceHelloWorld @Inject()(cc: ControllerComponents) extends BackendController(cc) {
 
-	def hello() = Action.async { implicit request =>
+	def hello(): Action[AnyContent] = Action.async { implicit request =>
 		Future.successful(Ok("Hello world"))
 	}
 

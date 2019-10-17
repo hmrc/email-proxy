@@ -20,29 +20,22 @@ import java.net.ConnectException
 import java.util.concurrent.TimeoutException
 
 import akka.util.ByteString
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
-import play.api.mvc._
 import javax.inject.{Inject, Singleton}
-import play.api.{Configuration, Environment}
-import play.api.Mode.Mode
 import play.api.http.HttpEntity
 import play.api.libs.json.JsValue
+import play.api.mvc._
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
-class EmailControllers @Inject()(
-                                  http:HttpClient,
-                                  val runModeConfiguration: Configuration,
-                                  envi: Environment
-                                )extends BaseController with ServicesConfig {
+class EmailControllers @Inject()(http: HttpClient, cc: ControllerComponents, servicesConfig: ServicesConfig)
+                                (implicit ec: ExecutionContext) extends BackendController(cc) {
 
-  protected def mode: Mode = envi.mode
-
-  private lazy val rendererBaseUrl = baseUrl("email")
+  private lazy val rendererBaseUrl = servicesConfig.baseUrl("email")
 
 
   def gatewayTimeoutResult( e:Exception):Result = {
@@ -54,18 +47,17 @@ class EmailControllers @Inject()(
   def send(domain: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
 
     http.POST(s"$rendererBaseUrl/$domain/email", request.body)
-        .map{ r =>
-          Result( ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")) ).withHeaders("Content-Type" -> "application/json")
-        }
-      .recover{
-        case e: TimeoutException   => gatewayTimeoutResult(e)
+      .map { r =>
+        Result(ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType"))).withHeaders("Content-Type" -> "application/json")
+      }
+      .recover {
+        case e: TimeoutException => gatewayTimeoutResult(e)
         case e: ConnectException => gatewayTimeoutResult(e)
-        case e: BadGatewayException =>  gatewayTimeoutResult(e)
+        case e: BadGatewayException => gatewayTimeoutResult(e)
 
         case e =>
-          Result( ResponseHeader(400), HttpEntity.Strict(ByteString(e.getMessage), None) ).withHeaders("Content-Type" -> "application/json")
+          Result(ResponseHeader(BAD_REQUEST), HttpEntity.Strict(ByteString(e.getMessage), None)).withHeaders("Content-Type" -> "application/json")
       }
-
   }
 
 }
