@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.emailproxy.controllers
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -25,8 +25,8 @@ import scala.concurrent.Future
 @Singleton()
 class MicroserviceHelloWorld @Inject()(cc: ControllerComponents) extends BackendController(cc) {
 
-	def hello(): Action[AnyContent] = Action.async { implicit request =>
-		Future.successful(Ok("Hello world"))
-	}
+  def hello(): Action[AnyContent] = Action.async { implicit request =>
+    Future.successful(Ok("Hello world"))
+  }
 
 }

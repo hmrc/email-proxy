@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{ControllerComponents, Headers}
+import play.api.libs.json.{ JsValue, Json }
+import play.api.mvc.{ ControllerComponents, Headers }
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.{ExecutionContext, Future, TimeoutException}
+import scala.concurrent.{ ExecutionContext, Future, TimeoutException }
 
 class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar {
   import play.api.test.Helpers._
@@ -50,26 +50,29 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
       | }
       |}""".stripMargin
 
-  val fakeRequest: FakeRequest[String] = FakeRequest("POST", "/hmrc/email", Headers("Content-type" -> "application/json"), validBody)
+  val fakeRequest: FakeRequest[String] =
+    FakeRequest("POST", "/hmrc/email", Headers("Content-type" -> "application/json"), validBody)
 
   val injector: Injector = app.injector
   implicit lazy val ec: concurrent.ExecutionContext = injector.instanceOf[ExecutionContext]
   implicit lazy val cc: ControllerComponents = injector.instanceOf[ControllerComponents]
   implicit lazy val sc: ServicesConfig = injector.instanceOf[ServicesConfig]
 
-  override def fakeApplication(): Application = new GuiceApplicationBuilder().configure(Map("appname" -> "TEST")).build()
+  override def fakeApplication(): Application =
+    new GuiceApplicationBuilder().configure(Map("appname" -> "TEST")).build()
 
   "Send email" should {
     "be valid" in {
       val mockHttpClient = mock[HttpClient]
-      when(mockHttpClient.POST[JsValue, HttpResponse](anyString(),any(),any())(any(),any(),any(),any())).thenReturn(
-        Future.successful( HttpResponse(ACCEPTED, Some(Json.parse("""{"result": "Hello"}"""))))
-      )
-      val controller =  new EmailControllers(mockHttpClient, cc, sc)
+      when(mockHttpClient.POST[JsValue, HttpResponse](anyString(), any(), any())(any(), any(), any(), any()))
+        .thenReturn(
+          Future.successful(HttpResponse(ACCEPTED, Some(Json.parse("""{"result": "Hello"}"""))))
+        )
+      val controller = new EmailControllers(mockHttpClient, cc, sc)
 
       implicit lazy val materializer: Materializer = app.materializer
 
-      val result = call( controller.send("hmrc"), fakeRequest )
+      val result = call(controller.send("hmrc"), fakeRequest)
 
       status(result) mustEqual ACCEPTED
     }
@@ -77,14 +80,14 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
 
   "should be invalid" in {
     val mockHttpClient = mock[HttpClient]
-    when(mockHttpClient.POST[JsValue,HttpResponse](anyString(),any(),any())(any(),any(),any(),any())).thenReturn(
-      Future.successful( HttpResponse(BAD_REQUEST, Some(Json.parse("""{"statusCode":  400, "message": "Something"}"""))))
+    when(mockHttpClient.POST[JsValue, HttpResponse](anyString(), any(), any())(any(), any(), any(), any())).thenReturn(
+      Future.successful(HttpResponse(BAD_REQUEST, Some(Json.parse("""{"statusCode":  400, "message": "Something"}"""))))
     )
-    val controller =  new EmailControllers(mockHttpClient, cc, sc)
+    val controller = new EmailControllers(mockHttpClient, cc, sc)
 
     implicit lazy val materializer: Materializer = app.materializer
 
-    val result = call( controller.send("hmrc"), fakeRequest )
+    val result = call(controller.send("hmrc"), fakeRequest)
 
     status(result) mustEqual BAD_REQUEST
   }
@@ -92,10 +95,11 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
   "email server no running" in {
     val mockHttpClient = mock[HttpClient]
 
-    when(mockHttpClient.POST[JsValue,HttpResponse](anyString(),any(),any())(any(),any(),any(),any())).thenAnswer(new Answer[Future[HttpResponse]] {
-      override def answer(invocation: InvocationOnMock): Future[HttpResponse] = Future.failed(new TimeoutException())
-    })
-    val controller =  new EmailControllers(mockHttpClient, cc, sc)
+    when(mockHttpClient.POST[JsValue, HttpResponse](anyString(), any(), any())(any(), any(), any(), any()))
+      .thenAnswer(new Answer[Future[HttpResponse]] {
+        override def answer(invocation: InvocationOnMock): Future[HttpResponse] = Future.failed(new TimeoutException())
+      })
+    val controller = new EmailControllers(mockHttpClient, cc, sc)
 
     implicit lazy val materializer: Materializer = app.materializer
 
