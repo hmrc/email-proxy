@@ -1,5 +1,5 @@
 import TestPhases.oneForkedJvmPerTest
-import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption}
+import uk.gov.hmrc.DefaultBuildSettings.addTestReportOption
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
 val appName = "email-proxy"
