@@ -16,20 +16,18 @@
 
 package uk.gov.hmrc.emailproxy.controllers
 
-import java.net.ConnectException
-import java.util.concurrent.TimeoutException
-
 import akka.util.ByteString
-import javax.inject.{ Inject, Singleton }
 import play.api.http.HttpEntity
 import play.api.libs.json.JsValue
 import play.api.mvc._
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.{ ExecutionContext, Future }
+import java.net.ConnectException
+import java.util.concurrent.TimeoutException
+import javax.inject.{ Inject, Singleton }
+import scala.concurrent.ExecutionContext
 
 @Singleton()
 class EmailControllers @Inject()(http: HttpClient, cc: ControllerComponents, servicesConfig: ServicesConfig)(

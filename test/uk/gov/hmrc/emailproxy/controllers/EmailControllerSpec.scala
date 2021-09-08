@@ -21,7 +21,7 @@ import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
@@ -30,9 +30,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ ControllerComponents, Headers }
 import play.api.test.FakeRequest
-import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.{ HttpClient, HttpResponse }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ ExecutionContext, Future, TimeoutException }
 
@@ -66,8 +65,7 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
       val mockHttpClient = mock[HttpClient]
       when(mockHttpClient.POST[JsValue, HttpResponse](anyString(), any(), any())(any(), any(), any(), any()))
         .thenReturn(
-          Future.successful(HttpResponse(ACCEPTED, Some(Json.parse("""{"result": "Hello"}"""))))
-        )
+          Future.successful(HttpResponse(ACCEPTED, Json.parse("""{"result": "Hello"}"""), Map("" -> Seq("")))))
       val controller = new EmailControllers(mockHttpClient, cc, sc)
 
       implicit lazy val materializer: Materializer = app.materializer
@@ -81,7 +79,8 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
   "should be invalid" in {
     val mockHttpClient = mock[HttpClient]
     when(mockHttpClient.POST[JsValue, HttpResponse](anyString(), any(), any())(any(), any(), any(), any())).thenReturn(
-      Future.successful(HttpResponse(BAD_REQUEST, Some(Json.parse("""{"statusCode":  400, "message": "Something"}"""))))
+      Future.successful(
+        HttpResponse(BAD_REQUEST, Json.parse("""{"statusCode":  400, "message": "Something"}"""), Map("" -> Seq(""))))
     )
     val controller = new EmailControllers(mockHttpClient, cc, sc)
 
