@@ -27,3 +27,4 @@ lazy val microservice = Project(appName, file("."))
     resolvers += Resolver.jcenterRepo
   )
   .settings( majorVersion := 1 )
+  .settings(ScoverageSettings())

@@ -22,13 +22,13 @@ Sends a request to the email m/s via the email-proxy
 
 See email microservice for json body format.
 
-_Note: the email-proxy will convert the body to json but will do no other validation, all other errors will 
-be supplied by the connected email m/s._ 
+_Note: the email-proxy will convert the body to json but will do no other validation, all other errors will
+be supplied by the connected email m/s._
 
 
 ### Response
 
-Response of 2xx should be treated as ok all others as an exception 
+Response of 2xx should be treated as ok all others as an exception
 
 | Status | Message                                                                           |
 |--------|-----------------------------------------------------------------------------------|
@@ -48,7 +48,21 @@ Only returned in the case of an exception response (status code >= 400)
 }
 ```
 
+## Run the tests and sbt fmt before raising a PR
 
+Format:
+
+`sbt fmt`
+
+Then run the tests and coverage report:
+
+`sbt clean coverage test coverageReport`
+
+If your build fails due to poor test coverage, *DO NOT* lower the test coverage threshold, instead inspect the generated report located here on your local repo: `/target/scala-2.12/scoverage-report/index.html`
+
+Then run the integration tests:
+
+`sbt it:test`
 
 ### License
 
