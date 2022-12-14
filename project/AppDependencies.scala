@@ -13,9 +13,8 @@ object AppDependencies {
     "org.scalatest"          %% "scalatest"                % "3.2.9" % scope,
     "org.pegdown"            % "pegdown"                   % "1.6.0" % scope,
     "org.scalatestplus.play" %% "scalatestplus-play"       % "5.1.0" % scope,
-    "com.vladsch.flexmark"   % "flexmark-all"              % "0.36.8",
+    "com.vladsch.flexmark"   % "flexmark-all"              % "0.36.8" % scope,
     "org.scalatestplus"      %% "mockito-3-4"              % "3.2.9.0",
     "org.mockito"            % "mockito-core"              % "3.11.2"
   )
-
 }
