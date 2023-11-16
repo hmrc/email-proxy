@@ -3,15 +3,15 @@ import sbt._
 
 object AppDependencies {
 
-  val boostrapVersion = "7.23.0"
+  val bootstrapVersion = "7.23.0"
 
   val compile: Seq[ModuleID] = Seq(
     ws,
-    "uk.gov.hmrc" %% "bootstrap-backend-play-28" % boostrapVersion
+    "uk.gov.hmrc" %% "bootstrap-backend-play-28" % bootstrapVersion
   )
 
   def test(scope: String = "test"): Seq[ModuleID] = Seq(
-    "uk.gov.hmrc" %% "bootstrap-test-play-28" % boostrapVersion % scope,
+    "uk.gov.hmrc" %% "bootstrap-test-play-28" % bootstrapVersion % scope,
     "org.scalatest"          %% "scalatest"                % "3.2.9" % scope,
     "org.pegdown"            % "pegdown"                   % "1.6.0" % scope,
     "org.scalatestplus.play" %% "scalatestplus-play"       % "5.1.0" % scope,
