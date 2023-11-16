@@ -9,7 +9,6 @@ object AppDependencies {
   )
 
   def test(scope: String = "test"): Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"            %% "service-integration-test" % "1.1.0-play-28" % scope,
     "org.scalatest"          %% "scalatest"                % "3.2.9" % scope,
     "org.pegdown"            % "pegdown"                   % "1.6.0" % scope,
     "org.scalatestplus.play" %% "scalatestplus-play"       % "5.1.0" % scope,
