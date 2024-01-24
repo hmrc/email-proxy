@@ -68,7 +68,7 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
           Future.successful(HttpResponse(ACCEPTED, Json.parse("""{"result": "Hello"}"""), Map("" -> Seq("")))))
       val controller = new EmailControllers(mockHttpClient, cc, sc)
 
-      implicit lazy val materializer = app.materializer
+      implicit lazy val materializer: Materializer = app.materializer
 
       val result = call(controller.send("hmrc"), fakeRequest)
 
