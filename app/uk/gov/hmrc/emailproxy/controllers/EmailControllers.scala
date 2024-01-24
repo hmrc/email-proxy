@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.emailproxy.controllers
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import play.api.http.HttpEntity
 import play.api.libs.json.JsValue
 import play.api.mvc._

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.emailproxy.controllers
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -68,7 +68,7 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
           Future.successful(HttpResponse(ACCEPTED, Json.parse("""{"result": "Hello"}"""), Map("" -> Seq("")))))
       val controller = new EmailControllers(mockHttpClient, cc, sc)
 
-      implicit lazy val materializer: Materializer = app.materializer
+      implicit lazy val materializer = app.materializer
 
       val result = call(controller.send("hmrc"), fakeRequest)
 
