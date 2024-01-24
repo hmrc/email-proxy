@@ -7,7 +7,8 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test
   )
   .settings(
-    resolvers += Resolver.jcenterRepo
+    resolvers += Resolver.jcenterRepo,
+    scalacOptions += "-Wconf:cat=unused-imports&src=routes/.*:s"
   )
   .settings( majorVersion := 1 )
   .settings(ScoverageSettings())
