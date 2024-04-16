@@ -12,3 +12,7 @@ lazy val microservice = Project(appName, file("."))
   )
   .settings( majorVersion := 1 )
   .settings(ScoverageSettings())
+
+Test / test := (Test / test)
+  .dependsOn(scalafmtCheckAll)
+  .value

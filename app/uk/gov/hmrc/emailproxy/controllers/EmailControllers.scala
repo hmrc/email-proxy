@@ -30,9 +30,9 @@ import javax.inject.{ Inject, Singleton }
 import scala.concurrent.ExecutionContext
 
 @Singleton()
-class EmailControllers @Inject()(http: HttpClient, cc: ControllerComponents, servicesConfig: ServicesConfig)(
-  implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+class EmailControllers @Inject() (http: HttpClient, cc: ControllerComponents, servicesConfig: ServicesConfig)(implicit
+  ec: ExecutionContext
+) extends BackendController(cc) {
 
   private lazy val rendererBaseUrl = servicesConfig.baseUrl("email")
 

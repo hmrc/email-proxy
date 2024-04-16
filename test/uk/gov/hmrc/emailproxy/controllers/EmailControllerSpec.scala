@@ -65,7 +65,8 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
       val mockHttpClient = mock[HttpClient]
       when(mockHttpClient.POST[JsValue, HttpResponse](anyString(), any(), any())(any(), any(), any(), any()))
         .thenReturn(
-          Future.successful(HttpResponse(ACCEPTED, Json.parse("""{"result": "Hello"}"""), Map("" -> Seq("")))))
+          Future.successful(HttpResponse(ACCEPTED, Json.parse("""{"result": "Hello"}"""), Map("" -> Seq(""))))
+        )
       val controller = new EmailControllers(mockHttpClient, cc, sc)
 
       implicit lazy val materializer: Materializer = app.materializer
@@ -80,7 +81,8 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
     val mockHttpClient = mock[HttpClient]
     when(mockHttpClient.POST[JsValue, HttpResponse](anyString(), any(), any())(any(), any(), any(), any())).thenReturn(
       Future.successful(
-        HttpResponse(BAD_REQUEST, Json.parse("""{"statusCode":  400, "message": "Something"}"""), Map("" -> Seq(""))))
+        HttpResponse(BAD_REQUEST, Json.parse("""{"statusCode":  400, "message": "Something"}"""), Map("" -> Seq("")))
+      )
     )
     val controller = new EmailControllers(mockHttpClient, cc, sc)
 
