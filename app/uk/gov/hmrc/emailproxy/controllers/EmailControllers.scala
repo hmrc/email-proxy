@@ -21,16 +21,18 @@ import play.api.http.HttpEntity
 import play.api.libs.json.JsValue
 import play.api.mvc._
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-
-import java.net.ConnectException
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import java.net.{ ConnectException, URI }
 import java.util.concurrent.TimeoutException
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.http.HttpReads.Implicits._
 
 @Singleton()
-class EmailControllers @Inject() (http: HttpClient, cc: ControllerComponents, servicesConfig: ServicesConfig)(implicit
+class EmailControllers @Inject() (http: HttpClientV2, cc: ControllerComponents, servicesConfig: ServicesConfig)(implicit
   ec: ExecutionContext
 ) extends BackendController(cc) {
 
@@ -44,7 +46,9 @@ class EmailControllers @Inject() (http: HttpClient, cc: ControllerComponents, se
 
   def send(domain: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     http
-      .POST(s"$rendererBaseUrl/$domain/email", request.body)
+      .post(new URI(s"$rendererBaseUrl/$domain/email").toURL)
+      .withBody(request.body)
+      .execute[HttpResponse]
       .map { r =>
         Result(ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")))
           .withHeaders("Content-Type" -> "application/json")
@@ -59,5 +63,4 @@ class EmailControllers @Inject() (http: HttpClient, cc: ControllerComponents, se
             .withHeaders("Content-Type" -> "application/json")
       }
   }
-
 }
