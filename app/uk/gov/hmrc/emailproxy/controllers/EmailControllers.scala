@@ -41,7 +41,7 @@ class EmailControllers @Inject() (http: HttpClientV2, cc: ControllerComponents, 
   def gatewayTimeoutResult(e: Exception): Result = {
     val msg = s"""{ "statusCode": $BAD_GATEWAY, "message": "${e.getMessage}" } """
     Result(ResponseHeader(BAD_GATEWAY), HttpEntity.Strict(ByteString(msg), None))
-      .withHeaders("Content-Type" -> "application/json")
+      .withHeaders("HttpResponse.entity.contentType" -> "application/json")
   }
 
   def send(domain: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
@@ -51,7 +51,7 @@ class EmailControllers @Inject() (http: HttpClientV2, cc: ControllerComponents, 
       .execute[HttpResponse]
       .map { r =>
         Result(ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")))
-          .withHeaders("Content-Type" -> "application/json")
+          .withHeaders("HttpResponse.entity.contentType" -> "application/json")
       }
       .recover {
         case e: TimeoutException    => gatewayTimeoutResult(e)
@@ -60,7 +60,7 @@ class EmailControllers @Inject() (http: HttpClientV2, cc: ControllerComponents, 
 
         case e =>
           Result(ResponseHeader(BAD_REQUEST), HttpEntity.Strict(ByteString(e.getMessage), None))
-            .withHeaders("Content-Type" -> "application/json")
+            .withHeaders("HttpResponse.entity.contentType" -> "application/json")
       }
   }
 }

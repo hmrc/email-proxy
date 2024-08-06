@@ -9,9 +9,6 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     resolvers += Resolver.jcenterRepo
   )
-  .settings(
-    scalacOptions ++= Seq("-rewrite", "-source", "3.4-migration")
-  )
   .settings(majorVersion := 2)
   .settings(ScoverageSettings())
 
