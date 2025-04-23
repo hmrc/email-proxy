@@ -73,7 +73,7 @@ class EmailControllers @Inject() (
       }
   }
 
-  private[controllers] def createAuditEvent(r: HttpResponse)(implicit request: Request[JsValue]): Future[AuditResult] =
+  private[controllers] def createAuditEvent(r: HttpResponse)(using request: Request[JsValue]): Future[AuditResult] =
     auditConnector.sendEvent(
       DataEvent(
         auditSource = "email-proxy",
