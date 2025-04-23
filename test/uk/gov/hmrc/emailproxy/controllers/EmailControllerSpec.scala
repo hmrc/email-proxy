@@ -17,12 +17,12 @@
 package uk.gov.hmrc.emailproxy.controllers
 
 import org.apache.pekko.stream.Materializer
-import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play._
+import org.scalatestplus.play.*
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.Injector
@@ -32,6 +32,8 @@ import play.api.mvc.{ ControllerComponents, Headers }
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.net.URL
@@ -64,11 +66,14 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
 
   val mockHttpClient: HttpClientV2 = mock[HttpClientV2]
   val mockRequestBuilder: RequestBuilder = mock[RequestBuilder]
+  val mockAuditConnector: AuditConnector = mock[AuditConnector]
 
   when(mockHttpClient.post(any[URL])(any[HeaderCarrier]))
     .thenReturn(mockRequestBuilder)
   when(mockRequestBuilder.withBody(any())(using any(), any(), any()))
     .thenReturn(mockRequestBuilder)
+  when(mockAuditConnector.sendEvent(any())(any(), any()))
+    .thenReturn(Future.successful(Success))
 
   "Send email" should {
     "be valid" in {
@@ -77,7 +82,7 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
           Future.successful(HttpResponse(ACCEPTED, Json.parse("""{"result": "Hello"}"""), Map("" -> Seq(""))))
         )
 
-      val controller = new EmailControllers(mockHttpClient, cc, sc)
+      val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
 
       implicit lazy val materializer: Materializer = app.materializer
 
@@ -95,7 +100,7 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
         )
       )
 
-    val controller = new EmailControllers(mockHttpClient, cc, sc)
+    val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
 
     implicit lazy val materializer: Materializer = app.materializer
 
@@ -109,7 +114,7 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
       .thenAnswer(new Answer[Future[HttpResponse]] {
         override def answer(invocation: InvocationOnMock): Future[HttpResponse] = Future.failed(new TimeoutException())
       })
-    val controller = new EmailControllers(mockHttpClient, cc, sc)
+    val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
 
     implicit lazy val materializer: Materializer = app.materializer
 
