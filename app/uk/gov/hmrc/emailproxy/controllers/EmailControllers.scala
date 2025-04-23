@@ -58,7 +58,7 @@ class EmailControllers @Inject() (
       .withBody(request.body)
       .execute[HttpResponse]
       .map { r =>
-        createAuditEvent()
+        createAuditEvent(r)
         Result(ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")))
           .withHeaders("HttpResponse.entity.contentType" -> "application/json")
       }
@@ -73,13 +73,13 @@ class EmailControllers @Inject() (
       }
   }
 
-  private[controllers] def createAuditEvent()(implicit request: Request[JsValue]): Future[AuditResult] =
+  private[controllers] def createAuditEvent(r: HttpResponse)(implicit request: Request[JsValue]): Future[AuditResult] =
     auditConnector.sendEvent(
       DataEvent(
         auditSource = "email-proxy",
         auditType = EventTypes.Succeeded,
         tags = Map("path" -> request.path, "headers" -> request.headers.toString),
-        detail = Map("request" -> request.body.toString)
+        detail = Map("request" -> request.body.toString, "response" -> r.body)
       )
     )
 }
