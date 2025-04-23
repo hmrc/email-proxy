@@ -19,20 +19,28 @@ package uk.gov.hmrc.emailproxy.controllers
 import org.apache.pekko.util.ByteString
 import play.api.http.HttpEntity
 import play.api.libs.json.JsValue
-import play.api.mvc._
-import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import play.api.mvc.*
+
 import java.net.{ ConnectException, URI }
 import java.util.concurrent.TimeoutException
 import javax.inject.{ Inject, Singleton }
-import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import scala.concurrent.{ ExecutionContext, Future }
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.{ BadGatewayException, HttpResponse }
+import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
+import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 
 @Singleton()
-class EmailControllers @Inject() (http: HttpClientV2, cc: ControllerComponents, servicesConfig: ServicesConfig)(implicit
+class EmailControllers @Inject() (
+  http: HttpClientV2,
+  cc: ControllerComponents,
+  servicesConfig: ServicesConfig,
+  auditConnector: AuditConnector
+)(implicit
   ec: ExecutionContext
 ) extends BackendController(cc) {
 
@@ -50,6 +58,7 @@ class EmailControllers @Inject() (http: HttpClientV2, cc: ControllerComponents, 
       .withBody(request.body)
       .execute[HttpResponse]
       .map { r =>
+        createAuditEvent()
         Result(ResponseHeader(r.status), HttpEntity.Strict(ByteString(r.body), r.header("contentType")))
           .withHeaders("HttpResponse.entity.contentType" -> "application/json")
       }
@@ -63,4 +72,14 @@ class EmailControllers @Inject() (http: HttpClientV2, cc: ControllerComponents, 
             .withHeaders("HttpResponse.entity.contentType" -> "application/json")
       }
   }
+
+  private[controllers] def createAuditEvent()(implicit request: Request[JsValue]): Future[AuditResult] =
+    auditConnector.sendEvent(
+      DataEvent(
+        auditSource = "email-proxy",
+        auditType = EventTypes.Succeeded,
+        tags = Map("path" -> request.path, "headers" -> request.headers.toString),
+        detail = Map("request" -> request.body.toString)
+      )
+    )
 }
