@@ -6,9 +6,6 @@ lazy val microservice = Project(appName, file("."))
     scalaVersion := "3.3.4",
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test
   )
-  .settings(
-    resolvers += Resolver.jcenterRepo
-  )
   .settings(majorVersion := 2)
   .settings(ScoverageSettings())
 
