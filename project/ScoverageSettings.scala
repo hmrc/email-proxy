@@ -22,7 +22,7 @@ object ScoverageSettings {
   def apply() =
     Seq( // Semicolon-separated list of regexes matching classes to exclude
       ScoverageKeys.coverageExcludedPackages := "<empty>;.*Reverse.*;.*(config|testonly|views).*;.*(BuildInfo|Routes).*",
-      ScoverageKeys.coverageMinimumStmtTotal := 90.00,
+      ScoverageKeys.coverageMinimumStmtTotal := 95.00,
       ScoverageKeys.coverageFailOnMinimum := true,
       ScoverageKeys.coverageHighlighting := true
     )
