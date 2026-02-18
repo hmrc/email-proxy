@@ -31,12 +31,12 @@ import play.api.libs.json.Json
 import play.api.mvc.{ ControllerComponents, Headers }
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
+import uk.gov.hmrc.http.{ BadGatewayException, HeaderCarrier, HttpResponse }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-import java.net.URL
+import java.net.{ ConnectException, URL }
 import scala.concurrent.{ ExecutionContext, Future, TimeoutException }
 
 class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar {
@@ -90,37 +90,82 @@ class EmailControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Mockito
 
       status(result) mustEqual ACCEPTED
     }
-  }
 
-  "should be invalid" in {
-    when(mockRequestBuilder.execute[HttpResponse](using any(), any()))
-      .thenReturn(
-        Future.successful(
-          HttpResponse(BAD_REQUEST, Json.parse("""{"statusCode":  400, "message": "Something"}"""), Map("" -> Seq("")))
+    "be invalid" in {
+      when(mockRequestBuilder.execute[HttpResponse](using any(), any()))
+        .thenReturn(
+          Future.successful(
+            HttpResponse(
+              BAD_REQUEST,
+              Json.parse("""{"statusCode":  400, "message": "Something"}"""),
+              Map("" -> Seq(""))
+            )
+          )
         )
-      )
 
-    val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
+      val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
 
-    implicit lazy val materializer: Materializer = app.materializer
+      implicit lazy val materializer: Materializer = app.materializer
 
-    val result = call(controller.send("hmrc"), fakeRequest)
+      val result = call(controller.send("hmrc"), fakeRequest)
 
-    status(result) mustEqual BAD_REQUEST
+      status(result) mustEqual BAD_REQUEST
+    }
+
+    "email server no running" in {
+      when(mockRequestBuilder.execute[HttpResponse](using any(), any()))
+        .thenAnswer(new Answer[Future[HttpResponse]] {
+          override def answer(invocation: InvocationOnMock): Future[HttpResponse] =
+            Future.failed(new TimeoutException())
+        })
+      val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
+
+      implicit lazy val materializer: Materializer = app.materializer
+
+      val result = call(controller.send("hmrc"), fakeRequest)
+
+      status(result) mustEqual BAD_GATEWAY
+    }
+
+    "handle ConnectException as BadGateway" in {
+      when(mockRequestBuilder.execute[HttpResponse](using any(), any()))
+        .thenReturn(Future.failed(new ConnectException("Connection refused")))
+
+      val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
+
+      implicit lazy val materializer: Materializer = app.materializer
+
+      val result = call(controller.send("hmrc"), fakeRequest)
+
+      status(result) mustEqual BAD_GATEWAY
+      (contentAsJson(result) \ "statusCode").as[Int] mustEqual BAD_GATEWAY
+    }
+
+    "handle BadGatewayException as BadGateway" in {
+      when(mockRequestBuilder.execute[HttpResponse](using any(), any()))
+        .thenReturn(Future.failed(new BadGatewayException("Upstream 502")))
+
+      val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
+
+      implicit lazy val materializer: Materializer = app.materializer
+
+      val result = call(controller.send("hmrc"), fakeRequest)
+
+      status(result) mustEqual BAD_GATEWAY
+    }
+
+    "handle generic Exception as BadRequest" in {
+      when(mockRequestBuilder.execute[HttpResponse](using any(), any()))
+        .thenReturn(Future.failed(new RuntimeException("Something unexpected happened")))
+
+      val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
+
+      implicit lazy val materializer: Materializer = app.materializer
+
+      val result = call(controller.send("hmrc"), fakeRequest)
+
+      status(result) mustEqual BAD_REQUEST
+      contentAsString(result) mustEqual "Something unexpected happened"
+    }
   }
-
-  "email server no running" in {
-    when(mockRequestBuilder.execute[HttpResponse](using any(), any()))
-      .thenAnswer(new Answer[Future[HttpResponse]] {
-        override def answer(invocation: InvocationOnMock): Future[HttpResponse] = Future.failed(new TimeoutException())
-      })
-    val controller = new EmailControllers(mockHttpClient, cc, sc, mockAuditConnector)
-
-    implicit lazy val materializer: Materializer = app.materializer
-
-    val result = call(controller.send("hmrc"), fakeRequest)
-
-    status(result) mustEqual BAD_GATEWAY
-  }
-
 }
